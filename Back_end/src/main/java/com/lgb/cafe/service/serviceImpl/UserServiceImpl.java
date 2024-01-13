@@ -20,6 +20,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 public class UserServiceImpl implements UserService {
@@ -85,6 +89,20 @@ public class UserServiceImpl implements UserService {
         }
         return new ResponseEntity<String>("{\"message\":\"" +"Bad Credentials."+"\"}",HttpStatus.BAD_REQUEST);
 
+    }
+
+    @Override
+    public ResponseEntity<List<UserDTO>> getAllUser() {
+        try{
+            List<UserDTO> resultList = userRepository.findAll()
+                    .stream()
+                    .map(user -> modelMapper.map(user,UserDTO.class))
+                    .collect(Collectors.toList());
+            return new ResponseEntity<>(resultList,HttpStatus.OK);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return new ResponseEntity<>(new ArrayList<>(),HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Override
