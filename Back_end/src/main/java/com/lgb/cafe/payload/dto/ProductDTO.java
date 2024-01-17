@@ -1,26 +1,24 @@
 package com.lgb.cafe.payload.dto;
 
-
+import com.lgb.cafe.entities.Category;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
-
+public class ProductDTO {
     private Integer id;
 
     private String name;
 
-    private String contactNumber;
+    private CategoryDTO category;
 
-    private String email;
+    private String description;
 
-    private String password;
+    private Integer price;
 
     private String status;
-
-    private String role;
 }

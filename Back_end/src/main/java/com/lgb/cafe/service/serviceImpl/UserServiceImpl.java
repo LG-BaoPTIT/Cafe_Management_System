@@ -1,15 +1,19 @@
 package com.lgb.cafe.service.serviceImpl;
 
+import com.google.common.base.Strings;
 import com.lgb.cafe.constents.CafeConstants;
 import com.lgb.cafe.jwt.CustomerUserDetailsService;
 import com.lgb.cafe.jwt.JwtFilter;
 import com.lgb.cafe.jwt.JwtUtil;
 import com.lgb.cafe.payload.dto.UserDTO;
 import com.lgb.cafe.entities.User;
+import com.lgb.cafe.payload.request.ChangePasswordRequest;
+import com.lgb.cafe.payload.request.ForgotPasswordRequest;
 import com.lgb.cafe.payload.request.LoginRequest;
 import com.lgb.cafe.repositories.UserRepository;
 import com.lgb.cafe.service.UserService;
 import com.lgb.cafe.utils.CafeUtils;
+import com.lgb.cafe.utils.EmailUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +46,12 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     JwtUtil jwtUtil;
+
+    @Autowired
+    JwtFilter jwtFilter;
+
+    @Autowired
+    EmailUtils emailUtils;
 
     @Override
     public ResponseEntity<String> signup(UserDTO userDTO) {
@@ -103,6 +114,77 @@ public class UserServiceImpl implements UserService {
             e.printStackTrace();
         }
         return new ResponseEntity<>(new ArrayList<>(),HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    public ResponseEntity<String> update(UserDTO userDTO) {
+        try{
+            if(userRepository.existsById(userDTO.getId())){
+                userRepository.updateStatusById(userDTO.getId(),userDTO.getStatus());
+
+
+                new Thread( () -> sendMailToAllAdmin(userDTO.getStatus(),userRepository.getEmailById(userDTO.getId()),userRepository.getAllEmailOfAdmin())).start(); ;
+                //sendMailToAllAdmin(userDTO.getStatus(),userRepository.getEmailById(userDTO.getId()),userRepository.getAllEmailOfAdmin());
+                return CafeUtils.getResponseEntity("Status updated successfully!",HttpStatus.OK);
+
+            }else {
+                return CafeUtils.getResponseEntity("User id doesn't exist.",HttpStatus.OK);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return CafeUtils.getResponseEntity(CafeConstants.SOMETHING_WENT_WRONG,HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    public ResponseEntity<String> checkToken() {
+        return CafeUtils.getResponseEntity("True",HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<String> changePassword(ChangePasswordRequest request) {
+        try {
+            User user = userRepository.findByEmail(jwtFilter.getCurrentUser());
+            if(!user.equals(null)){
+                if(user.getPassword().equals(request.getOldPassword())){
+                    user.setPassword(request.getNewPassword());
+                    userRepository.save(user);
+                    return CafeUtils.getResponseEntity("Password Update Successfully.",HttpStatus.OK);
+
+                }
+                return CafeUtils.getResponseEntity("Incorrect Old PassWord.",HttpStatus.BAD_REQUEST);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return CafeUtils.getResponseEntity(CafeConstants.SOMETHING_WENT_WRONG,HttpStatus.INTERNAL_SERVER_ERROR);
+
+    }
+
+    @Override
+    public ResponseEntity<String> forgotPassword(ForgotPasswordRequest request) {
+        try{
+            User user = userRepository.findByEmail(request.getEmail());
+            if (!Objects.isNull(user) && !Strings.isNullOrEmpty(user.getEmail())) {
+                emailUtils.forgotPasswordMail(user.getEmail(),"Credentials by Cafe Management System",user.getPassword());
+                return CafeUtils.getResponseEntity("Check your mail for credentials",HttpStatus.OK);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return CafeUtils.getResponseEntity(CafeConstants.SOMETHING_WENT_WRONG,HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+
+    private void sendMailToAllAdmin(String status, String user, List<String> allEmailOfAdmin) {
+        allEmailOfAdmin.remove(jwtFilter.getCurrentUser());
+        if(status.equalsIgnoreCase("true")){
+            emailUtils.sendSimpleMessage(user,"Account Approved","USER:- "+user+" \n is approved by \nADMIN:-" + jwtFilter.getCurrentUser(),allEmailOfAdmin);
+        }
+        if(status.equalsIgnoreCase("false")){
+            emailUtils.sendSimpleMessage(user,"Account Disabled","USER:- "+user+" \n is disabled by \nADMIN:-" + jwtFilter.getCurrentUser(),allEmailOfAdmin);
+        }
+
     }
 
     @Override

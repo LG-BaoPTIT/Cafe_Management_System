@@ -1,6 +1,5 @@
 package com.lgb.cafe.payload.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,19 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
-
+public class CategoryDTO {
     private Integer id;
-
     private String name;
-
-    private String contactNumber;
-
-    private String email;
-
-    private String password;
-
-    private String status;
-
-    private String role;
 }

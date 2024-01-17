@@ -1,5 +1,4 @@
-package com.lgb.cafe.payload.dto;
-
+package com.lgb.cafe.payload.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,19 +7,19 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
-
+public class ProductResponse {
     private Integer id;
 
     private String name;
 
-    private String contactNumber;
+    private Integer categoryId;
 
-    private String email;
+    private String categoryName;
 
-    private String password;
+    private String description;
+
+    private Integer price;
 
     private String status;
 
-    private String role;
 }
